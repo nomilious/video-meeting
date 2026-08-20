@@ -25,6 +25,13 @@ npm run prisma:migrate --workspace=@video-meetings/api
 `{ "gvtToken": "..." }`. Задайте `DATABASE_URL` и `JWT_SECRET` в `.env` по
 примеру из `.env.example`.
 
+## Встречи API
+
+Защищённые JWT‑токеном ручки `POST /meetings`, `GET /meetings` и
+`GET /meetings/:id` создают и возвращают встречи текущего пользователя.
+При создании передайте `title`, `date` в ISO 8601 и непустой массив строк
+`participants`. Встречи других пользователей не выдаются и отвечают `404`.
+
 ## PostgreSQL
 
 ```bash
