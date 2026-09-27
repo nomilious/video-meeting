@@ -1,16 +1,24 @@
 {
   "name": "video-meetings",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/web"
+  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=@video-meetings/web\" \"npm run dev --workspace=@video-meetings/api\"",
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm run dev --workspace=@video-meetings/web",
-    "dev:api": "npm run dev --workspace=@video-meetings/api",
-    "build": "npm run build --workspaces",
-    "lint": "npm run lint --workspaces",
+    "dev:api": "cd apps/api && uv run uvicorn app.main:app --reload --port 3001",
+    "build": "npm run build --workspace=@video-meetings/web",
+    "lint": "npm run typecheck --workspace=@video-meetings/web && cd apps/api && uv run ruff check .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "api:types": "cd apps/api && uv run python scripts/export_openapi.py && cd ../.. && openapi-typescript apps/api/openapi.json -o apps/web/src/api/schema.d.ts && prettier --write apps/web/src/api/schema.d.ts apps/api/openapi.json"
   },
-  "devDependencies": { "concurrently": "^9.1.2", "prettier": "^3.5.3" }
+  "devDependencies": {
+    "@playwright/mcp": "^0.0.79",
+    "concurrently": "^9.1.2",
+    "prettier": "^3.5.3",
+    "openapi-typescript": "^7.6.1"
+  }
 }

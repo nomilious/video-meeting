@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/.venv
+**/.next
+**/dist
+**/__pycache__
+.git
+.agents
+.codex
+.env
+.env.*
+!.env.example
+*.log
+**/.DS_Store
