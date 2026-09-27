@@ -12,7 +12,7 @@ Follow the existing API-client and state-management conventions.
 
 ### Issue tracker
 
-Issues and specs live in `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+Issues and specs live in GitHub Issues for `nomilious/video-meeting`. See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 
