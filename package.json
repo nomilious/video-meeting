@@ -10,15 +10,17 @@
     "dev:api": "cd apps/api && uv run uvicorn app.main:app --reload --port 3001",
     "build": "npm run build --workspace=@video-meetings/web",
     "lint": "npm run typecheck --workspace=@video-meetings/web && cd apps/api && uv run ruff check .",
+    "test": "npm test --workspace=@video-meetings/web && cd apps/api && uv run pytest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "prepare": "husky",
     "api:types": "cd apps/api && uv run python scripts/export_openapi.py && cd ../.. && openapi-typescript apps/api/openapi.json -o apps/web/src/api/schema.d.ts && prettier --write apps/web/src/api/schema.d.ts apps/api/openapi.json"
   },
   "devDependencies": {
     "@playwright/mcp": "^0.0.79",
     "concurrently": "^9.1.2",
-    "prettier": "^3.5.3",
-    "openapi-typescript": "^7.6.1"
+    "husky": "^9.1.7",
+    "openapi-typescript": "^7.6.1",
+    "prettier": "^3.5.3"
   }
 }

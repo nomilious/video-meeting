@@ -127,6 +127,15 @@ Baseline намеренно не удаляет таблицы при downgrade,
 
 ## Проверки и обновление типов
 
+Husky устанавливает Git hooks через `prepare` при `npm install` или `npm ci`.
+Перед каждым коммитом `.husky/pre-commit` запускает `npm run lint`, затем
+`npm test` (frontend-тест и backend pytest). Ошибка любой проверки блокирует
+коммит. Hook не форматирует файлы и не меняет staging.
+Для интеграционных backend-тестов экспортируйте `TEST_DATABASE_URL` с адресом
+отдельной мигрированной тестовой базы; без него эти тесты пропускаются.
+Для запуска проверок нужны uv, Python-зависимости (`cd apps/api && uv sync --frozen`)
+и установленный Chromium (`npx playwright install chromium`).
+
 Форматирование: `npm run format` для Vue, TypeScript, JSON, YAML и Markdown;
 `cd apps/api && uv run ruff format .` для Python. Компактность означает простую
 структуру: логические блоки разделяются пустыми строками, условия пишутся явно.
