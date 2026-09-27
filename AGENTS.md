@@ -1,11 +1,19 @@
 # Project instructions
 
-## Readability
+## Project
 
-Keep code compact through clear structure and removing redundancy. Preserve
-blank lines between logical blocks, use braces for conditional bodies, and
-avoid nested ternaries or awkward wrapping. Fewer lines do not mean simpler code.
+Frontend: Vue 3 + TypeScript + Composition API + `<script setup>`.
+Backend: FastAPI + Pydantic v2 + SQLAlchemy 2.
+Python tooling: uv.
+Database changes require Alembic migrations.
+Follow the existing API-client and state-management conventions.
 
-## Documentation
+## Agent skills
 
-Update the project documentation whenever the project architecture changes, including modules, data flow, integrations, and deployment structure.
+### Issue tracker
+
+Issues and specs live in `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
