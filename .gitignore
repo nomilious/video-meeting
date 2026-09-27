@@ -13,3 +13,7 @@ __pycache__
 .ruff_cache
 .DS_Store
 *.tsbuildinfo
+.agents/skills/nestjs-best-practices/
+.agents/skills/requesting-code-review/
+.agents/skills/
+apps/api/AGENTS.md
