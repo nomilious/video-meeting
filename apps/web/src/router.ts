@@ -17,7 +17,7 @@ export const router = createRouter({
     },
     {
       path: '/meetings',
-      component: () => import('./components/MeetingsWorkspace.vue'),
+      component: () => import('./views/MeetingsView.vue'),
       meta: { requiresAuth: true },
     },
     { path: '/:pathMatch(.*)*', redirect: '/meetings' },
@@ -25,5 +25,7 @@ export const router = createRouter({
 });
 
 router.beforeEach((to) => {
-  if (to.meta.requiresAuth && !getToken()) return '/auth/Login';
+  if (to.meta.requiresAuth && !getToken()) {
+    return '/auth/Login';
+  }
 });

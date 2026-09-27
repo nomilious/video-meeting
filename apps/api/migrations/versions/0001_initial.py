@@ -8,8 +8,9 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
-    op.execute("""
+def upgrade() -> None:
+    op.execute(
+        """
         CREATE TABLE IF NOT EXISTS "User" (
             id TEXT PRIMARY KEY,
             email TEXT NOT NULL,
@@ -17,9 +18,13 @@ def upgrade():
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" TIMESTAMP(3) NOT NULL
         )
-    """)
+        """
+    )
+
     op.execute('CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User" (email)')
-    op.execute("""
+
+    op.execute(
+        """
         CREATE TABLE IF NOT EXISTS "Meeting" (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
@@ -29,11 +34,13 @@ def upgrade():
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" TIMESTAMP(3) NOT NULL
         )
-    """)
+        """
+    )
+
     op.execute('ALTER TABLE "Meeting" ALTER COLUMN participants SET NOT NULL')
     op.execute('CREATE INDEX IF NOT EXISTS "Meeting_ownerId_idx" ON "Meeting" ("ownerId")')
 
 
-def downgrade():
+def downgrade() -> None:
     # A baseline may have adopted user data; never drop it on downgrade.
     pass

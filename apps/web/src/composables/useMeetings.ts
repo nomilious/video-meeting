@@ -7,51 +7,74 @@ import type { Feedback, LoadStatus } from '../types';
 
 export function useMeetings() {
   const router = useRouter();
+
   const meetings = shallowRef<readonly Meeting[]>([]);
   const email = shallowRef('');
   const status = shallowRef<LoadStatus>('loading');
   const pending = shallowRef(false);
   const feedback = shallowRef<Feedback | null>(null);
+
   const controller = new AbortController();
   onScopeDispose(() => controller.abort());
 
   async function reportError(error: unknown) {
-    if (controller.signal.aborted) return;
+    if (controller.signal.aborted) {
+      return;
+    }
+
     if (error instanceof ApiError && error.status === 401) {
       clearToken();
       await router.replace('/auth/Login');
       return;
     }
+
     feedback.value = { kind: 'error', message: errorMessage(error) };
   }
 
   async function load() {
-    if (controller.signal.aborted) return;
+    if (controller.signal.aborted) {
+      return;
+    }
+
     status.value = 'loading';
     feedback.value = null;
+
     try {
       const [user, items] = await Promise.all([
         api.me(controller.signal),
         api.meetings(controller.signal),
       ]);
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        return;
+      }
+
       email.value = user.email;
       meetings.value = items;
       status.value = 'ready';
     } catch (error) {
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        return;
+      }
+
       status.value = 'error';
       await reportError(error);
     }
   }
 
   async function create(meeting: MeetingCreate): Promise<boolean> {
-    if (pending.value || controller.signal.aborted) return false;
+    if (pending.value || controller.signal.aborted) {
+      return false;
+    }
+
     pending.value = true;
     feedback.value = null;
+
     try {
       const created = await api.createMeeting(meeting, controller.signal);
-      if (controller.signal.aborted) return false;
+      if (controller.signal.aborted) {
+        return false;
+      }
+
       meetings.value = [...meetings.value, created].sort(
         (a, b) => Date.parse(a.date) - Date.parse(b.date),
       );
@@ -72,6 +95,7 @@ export function useMeetings() {
   }
 
   onMounted(load);
+
   return {
     meetings: computed(() => meetings.value),
     email: readonly(email),

@@ -22,6 +22,7 @@ class RegistrationCredentials(Credentials):
     def validate_password(cls, value: str) -> str:
         if len(value.encode()) > 72:
             raise ValueError("Password must be at most 72 UTF-8 bytes")
+
         return value
 
 
@@ -31,6 +32,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: str
     email: str
 
@@ -44,11 +46,15 @@ class MeetingCreate(BaseModel):
     @classmethod
     def normalize_date(cls, value: datetime) -> datetime:
         # Previous API accepted ISO dates without an offset as UTC.
-        return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+
+        return value.astimezone(UTC)
 
 
 class MeetingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
     id: str
     title: str
     date: datetime

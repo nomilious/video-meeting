@@ -51,11 +51,18 @@ Compose передаёт DB_HOST=postgres и DB_PASSWORD отдельно; SQLAl
 
 ## Архитектура
 
-- `apps/web/src/components`: формы авторизации, рабочее пространство, форма и
-  список встреч. Composition API, `<script setup lang="ts">`, Vue Router.
-  Стили компонентов находятся в `<style scoped>`; общие классы, токены
+- `apps/web/src/views`: страницы маршрутов — `AuthView.vue` для авторизации,
+  `MeetingsView.vue` для рабочего пространства встреч.
+- `apps/web/src/components/auth`: форма авторизации и витрина продукта.
+- `apps/web/src/components/meetings`: панель управления, обзор, форма и список встреч.
+- `apps/web/src/components/StatusMessage.vue`: общее сообщение о результате запроса.
+  Компоненты используют Composition API и `<script setup lang="ts">`.
+  Локальные стили находятся в `<style scoped>`; общие классы, токены
   и глобальные правила — в `apps/web/src/App.vue`.
-- `apps/web/src/api/client.ts`: общий HTTP-клиент, токен и сообщения об ошибках.
+- `apps/web/src/composables`: состояние запросов авторизации и встреч,
+  сообщения, перенаправления и отмена запросов при уходе со страницы.
+- `apps/web/src/api/client.ts`: общий HTTP-клиент, AbortSignal и сообщения об ошибках.
+- `apps/web/src/api/session.ts`: единое место чтения, сохранения и удаления JWT.
 - `apps/web/src/api/schema.d.ts`: типы, сгенерированные из FastAPI OpenAPI.
 - `apps/api/app`: настройки, async-сессии БД, ORM-модели, Pydantic-схемы,
   routers авторизации и встреч. У каждого запроса своя сессия SQLAlchemy.
@@ -112,10 +119,16 @@ Baseline намеренно не удаляет таблицы при downgrade,
 
 ## Проверки и обновление типов
 
+Форматирование: `npm run format` для Vue, TypeScript, JSON, YAML и Markdown;
+`cd apps/api && uv run ruff format .` для Python. Компактность означает простую
+структуру: логические блоки разделяются пустыми строками, условия пишутся явно.
+Сгенерированные схемы, lockfiles и установленные skills форматтер не переписывает.
+
 ```bash
 npm run api:types
 npm run build
 npm run lint
+npm test --workspace=@video-meetings/web
 cd apps/api
 DATABASE_URL=postgresql+asyncpg://user:password@localhost/test_db uv run alembic upgrade head
 TEST_DATABASE_URL=postgresql+asyncpg://user:password@localhost/test_db uv run pytest
@@ -127,3 +140,10 @@ TEST_DATABASE_URL=postgresql+asyncpg://user:password@localhost/test_db uv run py
 пользователи удаляются. Если TEST_DATABASE_URL не задан, интеграционный тест
 пропускается. После изменения Pydantic-схем обновите OpenAPI и TypeScript-типы
 через `npm run api:types`. npm и uv используют зафиксированные lockfiles.
+
+Frontend-тест использует Node.js test runner и Playwright из существующих
+dev-зависимостей. Он сам запускает Vite на свободном порту и проверяет
+регистрацию, вход, состояния загрузки/ошибок, повторные запросы, создание,
+защиту от повторной отправки и отмену запроса при смене страницы.
+Ответы API в этом тесте контролируются через Playwright; backend не нужен.
+Для первого запуска установите браузер: `npx playwright install chromium`.

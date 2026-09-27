@@ -2,24 +2,27 @@
 import { shallowRef } from 'vue';
 import { useMeetings } from '../composables/useMeetings';
 import type { MeetingCreate } from '../api/client';
-import MeetingForm from './MeetingForm.vue';
-import MeetingList from './MeetingList.vue';
-import MeetingsSummary from './MeetingsSummary.vue';
-import StatusMessage from './StatusMessage.vue';
-import WorkspaceHeader from './WorkspaceHeader.vue';
+import MeetingForm from '../components/meetings/MeetingForm.vue';
+import MeetingList from '../components/meetings/MeetingList.vue';
+import MeetingsSummary from '../components/meetings/MeetingsSummary.vue';
+import StatusMessage from '../components/StatusMessage.vue';
+import WorkspaceHeader from '../components/meetings/WorkspaceHeader.vue';
 
-const { meetings, email, status, pending, feedback, load, create, logout } =
-  useMeetings();
+const { meetings, email, status, pending, feedback, load, create, logout } = useMeetings();
+
 const composerOpen = shallowRef(false);
 
 async function createMeeting(meeting: MeetingCreate) {
-  if (await create(meeting)) composerOpen.value = false;
+  if (await create(meeting)) {
+    composerOpen.value = false;
+  }
 }
 </script>
 
 <template>
   <main class="workspace">
     <WorkspaceHeader @logout="logout" />
+
     <MeetingsSummary
       :email="email"
       :count="meetings.length"
@@ -28,11 +31,8 @@ async function createMeeting(meeting: MeetingCreate) {
       :composer-open="composerOpen"
       @toggle-composer="composerOpen = !composerOpen"
     />
-    <MeetingForm
-      v-if="composerOpen"
-      :pending="pending"
-      @submit="createMeeting"
-    />
+
+    <MeetingForm v-if="composerOpen" :pending="pending" @submit="createMeeting" />
     <StatusMessage :feedback="feedback" class="workspace-message" />
     <MeetingList :meetings="meetings" :status="status" @retry="load" />
   </main>
@@ -45,6 +45,7 @@ async function createMeeting(meeting: MeetingCreate) {
   margin: auto;
   padding: 20px clamp(20px, 5vw, 48px) 72px;
 }
+
 @media (width <= 600px) {
   .workspace {
     padding: 16px 20px 48px;

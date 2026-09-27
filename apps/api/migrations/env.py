@@ -2,6 +2,7 @@ import asyncio
 
 from alembic import context
 from sqlalchemy import pool
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.config import settings
@@ -10,16 +11,19 @@ from app.models import Base
 target_metadata = Base.metadata
 
 
-def migrate(connection):
+def migrate(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+
     with context.begin_transaction():
         context.run_migrations()
 
 
-async def online():
+async def online() -> None:
     engine = create_async_engine(settings.database_url, poolclass=pool.NullPool)
+
     async with engine.connect() as connection:
         await connection.run_sync(migrate)
+
     await engine.dispose()
 
 

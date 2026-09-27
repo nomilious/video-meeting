@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parent.parent / "../../.env", extra="ignore"
     )
+
     database_url: str = ""
     db_host: str = "localhost"
     db_password: str | None = None
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
     def validate_secret(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("JWT_SECRET must not be blank")
+
         return value
 
     @model_validator(mode="after")
@@ -38,17 +40,19 @@ class Settings(BaseSettings):
             url = make_url(self.database_url)
         else:
             raise ValueError("Set DATABASE_URL or DB_PASSWORD")
+
         if url.get_backend_name() != "postgresql":
             raise ValueError("DATABASE_URL must use PostgreSQL")
+
         # Accept the previous Prisma URL; public is PostgreSQL's default schema.
         schema = url.query.get("schema", "public")
+
         if schema != "public":
             raise ValueError("Only the public schema is supported")
-        self.database_url = (
-            url.set(drivername="postgresql+asyncpg")
-            .difference_update_query(["schema"])
-            .render_as_string(hide_password=False)
-        )
+
+        url = url.set(drivername="postgresql+asyncpg").difference_update_query(["schema"])
+        self.database_url = url.render_as_string(hide_password=False)
+
         return self
 
 

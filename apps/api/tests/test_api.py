@@ -11,6 +11,7 @@ from sqlalchemy import delete
 
 if not os.environ.get("TEST_DATABASE_URL"):
     pytest.skip("Set TEST_DATABASE_URL to a dedicated PostgreSQL database", allow_module_level=True)
+
 os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
 os.environ["JWT_SECRET"] = "integration-test-secret-never-use-in-production"
 
@@ -32,15 +33,21 @@ async def test_auth_and_meeting_isolation():
             assert (await client.get("/meetings")).status_code == 401
             assert (await client.post("/meetings", json={})).status_code == 401
             assert (await client.get("/meetings/missing")).status_code == 401
-            assert (
-                await client.post("/auth/login", json={"email": emails[0], "password": password})
-            ).status_code == 401
-            assert (
-                await client.post("/auth/register", json={"email": "invalid", "password": "short"})
-            ).status_code == 422
-            assert (
-                await client.post("/auth/register", json={"email": emails[0], "password": "я" * 40})
-            ).status_code == 422
+
+            response = await client.post(
+                "/auth/login", json={"email": emails[0], "password": password}
+            )
+            assert response.status_code == 401
+
+            response = await client.post(
+                "/auth/register", json={"email": "invalid", "password": "short"}
+            )
+            assert response.status_code == 422
+
+            response = await client.post(
+                "/auth/register", json={"email": emails[0], "password": "я" * 40}
+            )
+            assert response.status_code == 422
 
             tokens = []
             for email in emails:
@@ -49,22 +56,28 @@ async def test_auth_and_meeting_isolation():
                 )
                 assert response.status_code == 201, response.text
                 tokens.append(response.json()["gvtToken"])
-            assert (
-                await client.post("/auth/register", json={"email": emails[0], "password": password})
-            ).status_code == 409
-            assert (
-                await client.post(
-                    "/auth/login", json={"email": emails[0], "password": "wrong-password"}
-                )
-            ).status_code == 401
-            assert (
-                await client.post("/auth/login", json={"email": emails[0], "password": password})
-            ).status_code == 200
+
+            response = await client.post(
+                "/auth/register", json={"email": emails[0], "password": password}
+            )
+            assert response.status_code == 409
+
+            response = await client.post(
+                "/auth/login", json={"email": emails[0], "password": "wrong-password"}
+            )
+            assert response.status_code == 401
+
+            response = await client.post(
+                "/auth/login", json={"email": emails[0], "password": password}
+            )
+            assert response.status_code == 200
+
             headers = {"Authorization": f"Bearer {tokens[0]}"}
             other_headers = {"Authorization": f"Bearer {tokens[1]}"}
             identity = (await client.get("/auth/me", headers=headers)).json()
             assert identity["email"] == emails[0]
             assert set(identity) == {"id", "email"}
+
             expired = jwt.encode(
                 {"sub": identity["id"], "exp": datetime.now(UTC) - timedelta(seconds=1)},
                 settings.jwt_secret,
@@ -75,9 +88,10 @@ async def test_auth_and_meeting_isolation():
                 "invalid-token",
                 jwt.encode({"sub": identity["id"]}, settings.jwt_secret, algorithm="HS256"),
             ]:
-                assert (
-                    await client.get("/meetings", headers={"Authorization": f"Bearer {token}"})
-                ).status_code == 401
+                response = await client.get(
+                    "/meetings", headers={"Authorization": f"Bearer {token}"}
+                )
+                assert response.status_code == 401
 
             body = {
                 "title": "Team sync",
@@ -92,6 +106,7 @@ async def test_auth_and_meeting_isolation():
             ]:
                 response = await client.post("/meetings", headers=headers, json=body | invalid)
                 assert response.status_code == 422, response.text
+
             response = await client.post("/meetings", headers=headers, json=body)
             assert response.status_code == 201, response.text
             meeting = response.json()
@@ -99,6 +114,7 @@ async def test_auth_and_meeting_isolation():
             assert datetime.fromisoformat(meeting["date"]) == datetime(
                 2026, 10, 15, 14, 30, tzinfo=UTC
             )
+
             path = f"/meetings/{meeting['id']}"
             assert (await client.get(path, headers=headers)).json() == meeting
             assert (await client.get(path, headers=other_headers)).status_code == 404

@@ -28,25 +28,33 @@ async def test_migrations_preserve_data_and_are_repeatable(legacy):
     admin = await asyncpg.connect(base_url.set(drivername="postgresql").render_as_string(False))
     name = f"migration_{uuid4().hex}"
     await admin.execute(f'CREATE DATABASE "{name}"')
+
     url = base_url.set(database=name, drivername="postgresql+asyncpg")
     connection = await asyncpg.connect(url.set(drivername="postgresql").render_as_string(False))
     test_engine = create_async_engine(url)
     factory = async_sessionmaker(test_engine, expire_on_commit=False)
     password = "я" * 40  # Legacy Node bcrypt silently truncated to 72 bytes.
+
     try:
         if legacy:
             await connection.execute((ROOT / "tests/legacy_schema.sql").read_text())
             await connection.execute(
-                """INSERT INTO "User"
-                (id, email, "passwordHash", "updatedAt") VALUES ($1, $2, $3, NOW())""",
+                """
+                INSERT INTO "User" (id, email, "passwordHash", "updatedAt")
+                VALUES ($1, $2, $3, NOW())
+                """,
                 "legacy-user",
                 "legacy@example.com",
                 bcrypt.hashpw(password.encode()[:72], bcrypt.gensalt()).decode(),
             )
-            await connection.execute("""INSERT INTO "Meeting"
+            await connection.execute(
+                """
+                INSERT INTO "Meeting"
                 (id, title, date, participants, "ownerId", "updatedAt")
                 VALUES ('legacy-meeting', '  ', '2026-10-15 14:30:00', ARRAY[''],
-                        'legacy-user', NOW())""")
+                        'legacy-user', NOW())
+                """
+            )
 
         env = dict(
             os.environ,
@@ -54,6 +62,7 @@ async def test_migrations_preserve_data_and_are_repeatable(legacy):
             JWT_SECRET="migration-check-secret-only",
         )
         env.pop("DB_PASSWORD", None)
+
         for _ in range(2):
             result = subprocess.run(
                 [str(ROOT / ".venv/bin/alembic"), "upgrade", "head"],
@@ -64,18 +73,23 @@ async def test_migrations_preserve_data_and_are_repeatable(legacy):
                 check=False,
             )
             assert result.returncode == 0, result.stderr
+
         assert await connection.fetchval("SELECT version_num FROM alembic_version") == "0002"
-        assert (
-            await connection.fetchval("""SELECT data_type FROM information_schema.columns
-            WHERE table_name = 'Meeting' AND column_name = 'date' """)
-            == "timestamp with time zone"
+
+        column_type = await connection.fetchval(
+            """
+            SELECT data_type FROM information_schema.columns
+            WHERE table_name = 'Meeting' AND column_name = 'date'
+            """
         )
+        assert column_type == "timestamp with time zone"
 
         async def session_override():
             async with factory() as session:
                 yield session
 
         app.dependency_overrides[get_session] = session_override
+
         if legacy:
             async with httpx.AsyncClient(
                 transport=httpx.ASGITransport(app=app), base_url="http://test"
@@ -90,15 +104,19 @@ async def test_migrations_preserve_data_and_are_repeatable(legacy):
                 assert response.json()[0]["id"] == "legacy-meeting"
                 assert response.json()[0]["title"] == "  "
                 assert response.json()[0]["date"] == "2026-10-15T14:30:00Z"
-                assert (
-                    await client.get("/meetings/legacy-meeting", headers=headers)
-                ).status_code == 200
+                response = await client.get("/meetings/legacy-meeting", headers=headers)
+                assert response.status_code == 200
         else:
             assert await connection.fetchval('SELECT count(*) FROM "User"') == 0
+
         with pytest.raises(asyncpg.CheckViolationError):
-            await connection.execute("""INSERT INTO "Meeting"
+            await connection.execute(
+                """
+                INSERT INTO "Meeting"
                 (id, title, date, participants, "ownerId", "updatedAt")
-                VALUES ('bad', '', NOW(), ARRAY[]::text[], 'missing', NOW())""")
+                VALUES ('bad', '', NOW(), ARRAY[]::text[], 'missing', NOW())
+                """
+            )
     finally:
         app.dependency_overrides.pop(get_session, None)
         await test_engine.dispose()

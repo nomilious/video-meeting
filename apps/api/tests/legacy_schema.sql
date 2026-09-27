@@ -29,6 +29,9 @@ CREATE TABLE "Meeting" (
 CREATE INDEX "Meeting_ownerId_idx" ON "Meeting"("ownerId");
 
 -- AddForeignKey
-ALTER TABLE "Meeting" ADD CONSTRAINT "Meeting_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Meeting"
+    ADD CONSTRAINT "Meeting_ownerId_fkey"
+    FOREIGN KEY ("ownerId") REFERENCES "User"("id")
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE "Meeting" ALTER COLUMN "participants" SET NOT NULL;

@@ -2,3 +2,9 @@ node_modules
 .next
 dist
 package-lock.json
+.agents
+.playwright-mcp
+skills-lock.json
+apps/api/.venv
+apps/api/openapi.json
+apps/web/src/api/schema.d.ts

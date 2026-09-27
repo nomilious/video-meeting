@@ -7,9 +7,11 @@ import type { AuthMode, Feedback } from '../types';
 
 export function useAuthentication(mode: Readonly<Ref<AuthMode>>) {
   const router = useRouter();
+
   const credentials = reactive({ email: '', password: '' });
   const pending = shallowRef(false);
   const feedback = shallowRef<Feedback | null>(null);
+
   let request: AbortController | undefined;
 
   function cancel() {
@@ -27,15 +29,20 @@ export function useAuthentication(mode: Readonly<Ref<AuthMode>>) {
     },
     { flush: 'sync' },
   );
+
   onScopeDispose(cancel);
 
   async function submit() {
-    if (pending.value) return;
+    if (pending.value) {
+      return;
+    }
+
     const controller = new AbortController();
     request = controller;
     pending.value = true;
     feedback.value = null;
     const submittedMode = mode.value;
+
     try {
       const result = await api.authenticate(
         submittedMode,
@@ -45,7 +52,10 @@ export function useAuthentication(mode: Readonly<Ref<AuthMode>>) {
         },
         controller.signal,
       );
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        return;
+      }
+
       if (submittedMode === 'register') {
         feedback.value = {
           kind: 'success',
@@ -54,11 +64,13 @@ export function useAuthentication(mode: Readonly<Ref<AuthMode>>) {
         credentials.password = '';
         return;
       }
+
       saveToken(result.gvtToken);
       await router.replace('/meetings');
     } catch (error) {
-      if (!controller.signal.aborted)
+      if (!controller.signal.aborted) {
         feedback.value = { kind: 'error', message: errorMessage(error) };
+      }
     } finally {
       if (request === controller) {
         request = undefined;

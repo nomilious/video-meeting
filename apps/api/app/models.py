@@ -24,6 +24,7 @@ class Timestamps:
 
 class User(Timestamps, Base):
     __tablename__ = "User"
+
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid4()))
     email: Mapped[str] = mapped_column(Text, unique=True)
     password_hash: Mapped[str] = mapped_column("passwordHash", Text)
@@ -36,6 +37,7 @@ class Meeting(Timestamps, Base):
         CheckConstraint("cardinality(participants) > 0", name="Meeting_participants_nonempty"),
         CheckConstraint("length(trim(title)) > 0", name="Meeting_title_nonempty"),
     )
+
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid4()))
     title: Mapped[str] = mapped_column(Text)
     date: Mapped[datetime] = mapped_column(DateTime(timezone=True))

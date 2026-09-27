@@ -15,3 +15,9 @@ defineProps<{ feedback: Feedback | null }>();
     {{ feedback.message }}
   </p>
 </template>
+
+<style scoped>
+.form-message--success {
+  color: var(--success);
+}
+</style>

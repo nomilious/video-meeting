@@ -32,4 +32,5 @@ app.include_router(meetings_router)
 async def health() -> dict[str, str]:
     async with engine.connect() as connection:
         await connection.execute(text("SELECT 1"))
+
     return {"status": "ok"}

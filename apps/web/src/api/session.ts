@@ -7,5 +7,6 @@ export function saveToken(token: string) {
   if (typeof token !== 'string' || !token.trim()) {
     throw new Error('Сервер не вернул токен авторизации.');
   }
+
   sessionStorage.setItem(tokenKey, token);
 }
